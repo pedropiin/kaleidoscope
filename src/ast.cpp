@@ -2,49 +2,49 @@
 #include <vector>
 #include <memory>
 
-class expr_ast {
+class ExprAST {
 	public:
-		virtual ~expr_ast() = default;
+		virtual ~ExprAST() = default;
 };
 
-class number_expr_ast : public expr_ast {
+class NumberExprAST : public ExprAST {
 	double val;
 
 	public:
-		number_expr_ast(double val) : val(val) {}
+		NumberExprAST(double val) : val(val) {}
 };
 
-class variable_expr_ast : public expr_ast {
+class VariableExprAST : public ExprAST {
 	std::string name;
 
 	public:
-		variable_expr_ast(std::string &name) : name(name) {}
+		VariableExprAST(std::string &name) : name(name) {}
 };
 
-class binary_expr_ast : public expr_ast {
+class BinaryExprAST : public ExprAST {
 	char op;
-	std::unique_ptr<expr_ast> lhs, rhs;
+	std::unique_ptr<ExprAST> lhs, rhs;
 
 	public:
-		binary_expr_ast(char op, std::unique_ptr<expr_ast> lhs, std::unique_ptr<expr_ast> rhs) 
+		BinaryExprAST(char op, std::unique_ptr<ExprAST> lhs, std::unique_ptr<ExprAST> rhs) 
 			: op(op), lhs(std::move(lhs)), rhs(std::move(rhs)) {}
 };
 
-class call_expr_ast : public expr_ast {
+class CallExprAST : public ExprAST {
 	std::string callee;
-	std::vector<std::unique_ptr<expr_ast>> args;
+	std::vector<std::unique_ptr<ExprAST>> args;
 
 	public:
-		call_expr_ast(const std::string &callee, std::vector<std::unique_ptr<expr_ast>> args) 
+		CallExprAST(const std::string &callee, std::vector<std::unique_ptr<ExprAST>> args) 
 			: callee(callee), args(std::move(args)) {}
 };
 
-class prototype_ast {
+class PrototypeAST {
 	std::string name;
 	std::vector<std::string> args;
 
 	public:
-		prototype_ast(const std::string &name, std::vector<std::string> args) 
+		PrototypeAST(const std::string &name, std::vector<std::string> args) 
 			: name(name), args(std::move(args)) {}
 
 		const std::string &get_name() const {
@@ -52,12 +52,12 @@ class prototype_ast {
 		}
 };
 
-class function_ast {
-	std::unique_ptr<prototype_ast> proto;
-	std::unique_ptr<expr_ast> body;
+class FunctionAST {
+	std::unique_ptr<PrototypeAST> proto;
+	std::unique_ptr<ExprAST> body;
 
 	public:
-		function_ast(std::unique_ptr<prototype_ast> proto, std::unique_ptr<expr_ast> body)
+		FunctionAST(std::unique_ptr<PrototypeAST> proto, std::unique_ptr<ExprAST> body)
 			: proto(std::move(proto)), body(std::move(body)) {}
 };
 

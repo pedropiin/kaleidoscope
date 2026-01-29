@@ -1,3 +1,5 @@
+#pragma once
+
 #include <cctype>
 #include <cstdio>
 #include <string>
@@ -14,13 +16,13 @@ enum token {
 	tok_number = -5,
 };
 
-class lexer {
+class Lexer {
 	public: 
 		std::string identifier_str;
 		double num_val;
+		int last_char = ' ';
 
 		int gettok() {
-			int last_char = ' ';
 
 			while (isspace(last_char)) {
 				last_char = getchar();
