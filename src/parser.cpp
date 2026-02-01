@@ -3,32 +3,39 @@
 #include <unordered_map>
 
 #include "lexer.cpp"
-#include "ast.cpp"
+#include "ast.hpp"
+#include "error.hpp"
 
 class Parser {
 	public:
 		int curr_tok;
 		Lexer lexer;
 
-		void handle_definition() {
-			if (parse_definition()) 
-				fprintf(stderr, "Parsed a function definition.\n");
-			else
-				get_next_token();
+		std::unique_ptr<FunctionAST> parse_definition() {
+			get_next_token();
+			std::unique_ptr<PrototypeAST> prototype = parse_prototype();
+			if (!prototype) 
+				return nullptr;
+
+			std::unique_ptr<ExprAST> expr = parse_expression();
+			if (expr)
+				return std::make_unique<FunctionAST>(std::move(prototype), std::move(expr));
+			
+			return nullptr;
 		}
 
-		void handle_extern() {
-			if (parse_extern()) 
-				fprintf(stderr, "Parsed an extern.\n");
-			else 
-				get_next_token();
+		std::unique_ptr<PrototypeAST> parse_extern() {
+			get_next_token();
+			return parse_prototype();
 		}
 
-		void handle_top_level_expr() {
-			if (parse_top_level_expr()) 
-				fprintf(stderr, "Parsed a top-level expression.\n");
-			else
-				get_next_token();
+		std::unique_ptr<FunctionAST> parse_top_level_expr() {
+			std::unique_ptr<ExprAST> expr = parse_expression();
+			if (expr) {
+				auto prototype = std::make_unique<PrototypeAST>("__anon_expr", std::vector<std::string>());
+				return std::make_unique<FunctionAST>(std::move(prototype), std::move(expr));
+			}
+			return nullptr;
 		}
 
 		int get_next_token() {
@@ -46,19 +53,6 @@ class Parser {
 			{'*', 40},
 			{'/', 40},
 		};
-
-		std::unique_ptr<FunctionAST> parse_definition() {
-			get_next_token();
-			std::unique_ptr<PrototypeAST> prototype = parse_prototype();
-			if (!prototype) 
-				return nullptr;
-
-			std::unique_ptr<ExprAST> expr = parse_expression();
-			if (expr)
-				return std::make_unique<FunctionAST>(std::move(prototype), std::move(expr));
-			
-			return nullptr;
-		}
 
 		std::unique_ptr<PrototypeAST> parse_prototype() {
 			if (curr_tok != tok_identifier) 
@@ -79,20 +73,6 @@ class Parser {
 			get_next_token();
 			
 			return std::make_unique<PrototypeAST>(func_name, std::move(arg_names));
-		}
-
-		std::unique_ptr<PrototypeAST> parse_extern() {
-			get_next_token();
-			return parse_prototype();
-		}
-
-		std::unique_ptr<FunctionAST> parse_top_level_expr() {
-			std::unique_ptr<ExprAST> expr = parse_expression();
-			if (expr) {
-				auto prototype = std::make_unique<PrototypeAST>("__anon_expr", std::vector<std::string>());
-				return std::make_unique<FunctionAST>(std::move(prototype), std::move(expr));
-			}
-			return nullptr;
 		}
 
 		std::unique_ptr<ExprAST> parse_expression() {
@@ -196,14 +176,4 @@ class Parser {
 
 			return tok_prec->second;
 		}
-
-		std::unique_ptr<ExprAST> log_error(const char *str) {
-			fprintf(stderr, "Error: %s\n", str);
-			return nullptr;
-		}
-
-		std::unique_ptr<PrototypeAST> log_error_proto(const char *str) {
-			log_error(str);
-			return nullptr;
-		}	
 };

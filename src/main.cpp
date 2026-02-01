@@ -1,30 +1,29 @@
-#include "lexer.cpp"
-#include "parser.cpp"
+#include "kaleidoscope_config.cpp"
 
 int main(int argc, char* argv[]) {
 	
-	Parser parser;
+	KaleidoscopeConfig kconfig;
 	fprintf(stderr, "ready> ");
-	parser.get_next_token();
+	kconfig.parser.get_next_token();
 
 	int eof = 0;
 	while (!eof) {
 		fprintf(stderr, "ready> ");
-		switch (parser.curr_tok) {
+		switch (kconfig.parser.curr_tok) {
 			case tok_def: 
-				parser.handle_definition();
+				kconfig.handle_definition();
 				break;
 			case tok_extern:
-				parser.handle_extern();
+				kconfig.handle_extern();
 				break;
 			case ';':
-				parser.get_next_token();
+				kconfig.parser.get_next_token();
 				break;
 			case tok_eof:
 				eof = 1;
 				break;
 			default:
-				parser.handle_top_level_expr();
+				kconfig.handle_top_level_expr();
 				break;
 		}
 	}
