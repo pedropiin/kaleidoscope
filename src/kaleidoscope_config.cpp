@@ -4,18 +4,9 @@
 #include "llvm/IR/Value.h"
 #include <map>
 
-#include "ast.hpp"
-#include "error.hpp"
 #include "parser.cpp"
 
 class KaleidoscopeConfig {
-    private:
-        // LLVM-related members
-        std::unique_ptr<llvm::LLVMContext> context;
-        std::unique_ptr<llvm::IRBuilder<>> builder;
-        std::unique_ptr<llvm::Module> module;
-        std::map<std::string, llvm::Value *> named_values;
-
     public:
         Parser parser;
 

@@ -19,6 +19,8 @@ add_executable(
     ./src/ast.cpp 
     ./src/parser.cpp
     ./src/kaleidoscope_config.cpp
+    ./src/codegen_visitor.hpp
+    ./src/codegen_visitor.cpp
 )
 
 # equivalent to 'llvm-config -cxxflags'
