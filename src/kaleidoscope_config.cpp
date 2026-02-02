@@ -5,30 +5,43 @@
 #include <map>
 
 #include "parser.cpp"
+#include "codegen_visitor.hpp"
 
 class KaleidoscopeConfig {
-    public:
-        Parser parser;
+	public:
+		Parser parser;
+		CodegenVisitor visitor;
 
-        void handle_definition() {
-            if (parser.parse_definition()) 
-				fprintf(stderr, "Parsed a function definition.\n");
-			else
+		void handle_definition() {
+			if (std::unique_ptr<FunctionAST> function_node = parser.parse_definition()) {
+				if (llvm::Function *function_ir = function_node->codegen(visitor)) {
+					fprintf(stderr, "Read function definition:\n");
+					function_ir->print(llvm::errs());
+				}
+			} else {
 				parser.get_next_token();
-        }
+			}
+		}
 
-        void handle_extern() {
-			if (parser.parse_extern()) 
-				fprintf(stderr, "Parsed an extern.\n");
-			else 
+		void handle_extern() {
+			if (std::unique_ptr<PrototypeAST> prototype_node = parser.parse_extern()) {
+				if (llvm::Function *prototype_ir = prototype_node->codegen(visitor)) {
+					fprintf(stderr, "Read extern:\n");
+					prototype_ir->print(llvm::errs());
+				}
+			} else {
 				parser.get_next_token();
+			}
 		}
 
 		void handle_top_level_expr() {
-			if (parser.parse_top_level_expr()) 
-				fprintf(stderr, "Parsed a top-level expression.\n");
-			else
+			if (std::unique_ptr<FunctionAST> function_node = parser.parse_top_level_expr()) {
+				if (llvm::Function *function_ir = function_node->codegen(visitor)) {
+					fprintf(stderr, "Read top-level expression:\n");
+					function_ir->print(llvm::errs());
+				}
+			} else {
 				parser.get_next_token();
+			}
 		}
-
 };

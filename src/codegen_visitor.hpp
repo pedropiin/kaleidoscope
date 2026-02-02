@@ -6,6 +6,8 @@
 #include "llvm/IR/Type.h"
 #include "llvm/IR/Value.h"
 #include "llvm/IR/Function.h"
+#include "llvm/IR/BasicBlock.h"
+#include "llvm/IR/Verifier.h"
 #include <map>
 #include <string>
 
@@ -24,6 +26,8 @@ class CodegenVisitor {
         std::unique_ptr<llvm::IRBuilder<>> builder;
         std::unique_ptr<llvm::Module> module;
         std::map<std::string, llvm::Value *> named_values;
+
+        CodegenVisitor();
 
         llvm::Value *visit_number_expr(NumberExprAST &);
         llvm::Value *visit_variable_expr(VariableExprAST &);
