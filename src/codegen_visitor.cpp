@@ -4,7 +4,46 @@
 CodegenVisitor::CodegenVisitor() {
 	context = std::make_unique<llvm::LLVMContext>();
 	builder = std::make_unique<llvm::IRBuilder<>>(*context);
-	module = std::make_unique<llvm::Module>("kaleidoscope jit", *context);
+	module = std::make_unique<llvm::Module>("KaleidoscopeJIT", *context);
+
+	this->initialize_module_and_managers();
+}
+
+void CodegenVisitor::initialize_module_and_managers() {
+	// Create new context and module
+	context = std::make_unique<llvm::LLVMContext>();
+	module = std::make_unique<llvm::Module>("KaleidoscopeJIT", *context);
+
+	// Create new builder for the module
+	builder = std::make_unique<llvm::IRBuilder<>>(*context);
+
+	// Pass and analysis managers
+	function_pass_manager = std::make_unique<llvm::FunctionPassManager>();
+	loop_analysis_manager = std::make_unique<llvm::LoopAnalysisManager>();
+	function_analysis_manager = std::make_unique<llvm::FunctionAnalysisManager>();
+	control_graph_analysis_manager = std::make_unique<llvm::CGSCCAnalysisManager>();
+	module_analysis_manager = std::make_unique<llvm::ModuleAnalysisManager>();
+	pass_instrumentation_callbacks = std::make_unique<llvm::PassInstrumentationCallbacks>();
+	standard_instrumentations = std::make_unique<llvm::StandardInstrumentations>(*context, false);
+
+	standard_instrumentations->registerCallbacks(*pass_instrumentation_callbacks, module_analysis_manager.get());
+
+	// Add transform passes
+	function_pass_manager->addPass(llvm::InstCombinePass()); // Canonical form pass
+	function_pass_manager->addPass(llvm::ReassociatePass()); // Expressoin reassociation
+	function_pass_manager->addPass(llvm::GVNPass()); // GVN algorithm for CSE
+	function_pass_manager->addPass(llvm::SimplifyCFGPass()); // Simplify CFG
+
+	// Register analysis passes used in the transform passes
+	llvm::PassBuilder pass_builder;
+	pass_builder.registerModuleAnalyses(*module_analysis_manager);
+	pass_builder.registerFunctionAnalyses(*function_analysis_manager);
+	pass_builder.crossRegisterProxies(
+		*loop_analysis_manager, 
+		*function_analysis_manager, 
+		*control_graph_analysis_manager, 
+		*module_analysis_manager
+	);
 }
 
 llvm::Value *CodegenVisitor::visit_number_expr(NumberExprAST &number_expr) {
@@ -116,6 +155,9 @@ llvm::Function *CodegenVisitor::visit_function(FunctionAST &function_node) {
 		builder->CreateRet(ret_val);
 
 		llvm::verifyFunction(*function);
+
+		// Run optimizations
+		function_pass_manager->run(*function, *function_analysis_manager);
 
 		return function;
 	}

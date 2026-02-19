@@ -27,6 +27,6 @@ add_executable(
 target_include_directories(kaleidoscope PRIVATE ${LLVM_INCLUDE_DIRS})
 target_compile_definitions(kaleidoscope PRIVATE ${LLVM_DEFINITIONS})
 
-# equivalent to 'llvm-config --libs core'
-llvm_map_components_to_libnames(LLVM_LIBS core support)
+# equivalent to 'llvm-config --libs <libnames_list...>'
+llvm_map_components_to_libnames(LLVM_LIBS core support passes analysis transformutils instcombine scalaropts)
 target_link_libraries(kaleidoscope ${LLVM_LIBS})
