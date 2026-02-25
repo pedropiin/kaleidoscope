@@ -8,6 +8,7 @@
 #include "llvm/IR/Function.h"
 #include "llvm/IR/BasicBlock.h"
 #include "llvm/IR/Verifier.h"
+#include "llvm/Support/TargetSelect.h"
 
 // Optimization imports
 #include "llvm/IR/PassManager.h"
@@ -19,8 +20,11 @@
 #include "llvm/Transforms/Scalar/Reassociate.h"
 #include "llvm/Transforms/Scalar/SimplifyCFG.h"
 
+#include "kaleidoscope_jit.hpp"
+
 #include <map>
 #include <string>
+#include <iostream>
 
 // Deal with circular dependency between 'ast.hpp' and 'codegen_visitor.hpp'
 class ExprAST;
@@ -47,7 +51,10 @@ class CodegenVisitor {
         std::unique_ptr<llvm::PassInstrumentationCallbacks> pass_instrumentation_callbacks;
         std::unique_ptr<llvm::StandardInstrumentations> standard_instrumentations;
 
-        CodegenVisitor();
+        // jit compiler
+        std::shared_ptr<llvm::orc::KaleidoscopeJIT> jit;
+
+        CodegenVisitor(std::shared_ptr<llvm::orc::KaleidoscopeJIT> og_jit_ptr);
 
         void initialize_module_and_managers();
 

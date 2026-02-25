@@ -1,18 +1,32 @@
 #include "codegen_visitor.hpp"
 #include "error.hpp"
 
-CodegenVisitor::CodegenVisitor() {
+CodegenVisitor::CodegenVisitor(std::shared_ptr<llvm::orc::KaleidoscopeJIT> og_jit_ptr) {
 	context = std::make_unique<llvm::LLVMContext>();
 	builder = std::make_unique<llvm::IRBuilder<>>(*context);
 	module = std::make_unique<llvm::Module>("KaleidoscopeJIT", *context);
+
+	jit = og_jit_ptr;
 
 	this->initialize_module_and_managers();
 }
 
 void CodegenVisitor::initialize_module_and_managers() {
+	// std::make_unique<>() calls the destructor of the previous
+	// object, but both "module" and "builder" hold references to 
+	// "context". Therefore, when calling their own destructors, 
+	// somewhere, these references are accessed, causing undefined behavior.
+	// This undefined behavior goes on and it's only manifested
+	// when accessing the object later on, making the bug REALLY
+	// hard to catch...
+	builder.reset();
+	module.reset();
+	context.reset();
+
 	// Create new context and module
 	context = std::make_unique<llvm::LLVMContext>();
 	module = std::make_unique<llvm::Module>("KaleidoscopeJIT", *context);
+	module->setDataLayout(jit->getDataLayout());
 
 	// Create new builder for the module
 	builder = std::make_unique<llvm::IRBuilder<>>(*context);
@@ -30,7 +44,7 @@ void CodegenVisitor::initialize_module_and_managers() {
 
 	// Add transform passes
 	function_pass_manager->addPass(llvm::InstCombinePass()); // Canonical form pass
-	function_pass_manager->addPass(llvm::ReassociatePass()); // Expressoin reassociation
+	function_pass_manager->addPass(llvm::ReassociatePass()); // Expression reassociation
 	function_pass_manager->addPass(llvm::GVNPass()); // GVN algorithm for CSE
 	function_pass_manager->addPass(llvm::SimplifyCFGPass()); // Simplify CFG
 
@@ -47,7 +61,7 @@ void CodegenVisitor::initialize_module_and_managers() {
 }
 
 llvm::Value *CodegenVisitor::visit_number_expr(NumberExprAST &number_expr) {
-    // "Constants are all u niqued together and shared. 
+    // "Constants are all uniqued together and shared. 
 	// For this reason, the API uses the 'foo::get(...)' idiom."
 	return llvm::ConstantFP::get(*context, llvm::APFloat(number_expr.val));
 }
@@ -120,7 +134,7 @@ llvm::Function *CodegenVisitor::visit_prototype(PrototypeAST &prototype_node) {
 
 llvm::Function *CodegenVisitor::visit_function(FunctionAST &function_node) {
 	llvm::Function *function = module->getFunction(function_node.proto->name);
-	
+
 	if (!function)
 		function = function_node.proto->codegen(*this);
 	else {
@@ -155,7 +169,7 @@ llvm::Function *CodegenVisitor::visit_function(FunctionAST &function_node) {
 		builder->CreateRet(ret_val);
 
 		llvm::verifyFunction(*function);
-
+		
 		// Run optimizations
 		function_pass_manager->run(*function, *function_analysis_manager);
 

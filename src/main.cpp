@@ -1,7 +1,11 @@
 #include "kaleidoscope_config.cpp"
 
 int main(int argc, char* argv[]) {
-	
+
+	llvm::InitializeNativeTarget();
+	llvm::InitializeNativeTargetAsmPrinter();
+	llvm::InitializeNativeTargetAsmParser();
+
 	KaleidoscopeConfig kconfig;
 	fprintf(stderr, "ready> ");
 	kconfig.parser.get_next_token();

@@ -21,6 +21,7 @@ add_executable(
     ./src/kaleidoscope_config.cpp
     ./src/codegen_visitor.hpp
     ./src/codegen_visitor.cpp
+    ./src/kaleidoscope_jit.hpp
 )
 
 # equivalent to 'llvm-config -cxxflags'
@@ -28,5 +29,16 @@ target_include_directories(kaleidoscope PRIVATE ${LLVM_INCLUDE_DIRS})
 target_compile_definitions(kaleidoscope PRIVATE ${LLVM_DEFINITIONS})
 
 # equivalent to 'llvm-config --libs <libnames_list...>'
-llvm_map_components_to_libnames(LLVM_LIBS core support passes analysis transformutils instcombine scalaropts)
+llvm_map_components_to_libnames(
+    LLVM_LIBS 
+    core 
+    support 
+    passes 
+    analysis 
+    transformutils 
+    instcombine 
+    scalaropts
+    native
+    orcjit
+)
 target_link_libraries(kaleidoscope ${LLVM_LIBS})
