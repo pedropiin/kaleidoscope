@@ -16,8 +16,6 @@ class KaleidoscopeConfig {
 		
 		Parser parser;
 		std::shared_ptr<llvm::orc::KaleidoscopeJIT> jit = std::move(exit_on_err(llvm::orc::KaleidoscopeJIT::Create()));
-		// std::shared_ptr<llvm::orc::KaleidoscopeJIT> jit(std::move(exit_on_err(llvm::orc::KaleidoscopeJIT::Create())));
-		// std::shared_ptr<llvm::orc::KaleidoscopeJIT> jit = std::make_shared<llvm::orc::KaleidoscopeJIT>(std::move(exit_on_err(llvm::orc::KaleidoscopeJIT::Create())));
 		CodegenVisitor visitor = CodegenVisitor(jit);
 
 		void handle_definition() {
@@ -55,7 +53,11 @@ class KaleidoscopeConfig {
 
 		void handle_top_level_expr() {
 			if (std::unique_ptr<FunctionAST> function_node = parser.parse_top_level_expr()) {
-				if (function_node->codegen(visitor)) {
+				if (llvm::Function *function_ir = function_node->codegen(visitor)) {
+					// Printing expression's IR
+					fprintf(stderr, "Read top-level expression:\n");
+					function_ir->print(llvm::errs());
+					
 					// Create ResourceTracker for the jit'd memory
 					llvm::orc::ResourceTrackerSP resource_tracker = jit->getMainJITDylib().createResourceTracker();
 
