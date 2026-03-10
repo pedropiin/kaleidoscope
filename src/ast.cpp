@@ -1,4 +1,4 @@
-#include "include/kaleidoscope/ast.hpp"
+#include "../include/kaleidoscope/ast.hpp"
 
 /*
 	NumberExprAST methods
